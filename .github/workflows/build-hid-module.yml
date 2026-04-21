@@ -1,43 +1,31 @@
-name: Build HID Gadget Module for A50
+name: Build HID Module
 on:
-  workflow_dispatch:  # You manually trigger this
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout kernel source
-        uses: actions/checkout@v4
-        with:
-          repository: GiovanYCringe-Experiments/kernel_a50
-          ref: master
+      - name: Clone kernel source (shallow)
+        run: |
+          git clone --depth=1 --branch master https://github.com/GiovanYCringe-Experiments/kernel_a50.git
+          cd kernel_a50
           
-      - name: Setup build environment
+      - name: Setup compiler
         run: |
           sudo apt update
           sudo apt install -y gcc-aarch64-linux-gnu make bc bison flex libssl-dev
           
-      - name: Configure kernel with HID gadget
+      - name: Configure and build HID module
         run: |
-          # Use the existing A50 defconfig
+          cd kernel_a50
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- a50_defconfig
-          # Enable HID gadget (THIS IS THE MAGIC LINE)
-          echo "CONFIG_USB_CONFIGFS_F_HID=y" >> .config
-          # Also make sure it's built as a module (not built-in)
           echo "CONFIG_USB_CONFIGFS_F_HID=m" >> .config
-          
-      - name: Build only the HID module
-        run: |
-          # Prepare kernel headers
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_prepare
-          # Build just the USB gadget HID module
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=drivers/usb/gadget/function
           
-      - name: Upload module
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: hid-gadget-a50
-          path: |
-            drivers/usb/gadget/function/usb_f_hid.ko
-            drivers/usb/gadget/function/g_hid.ko
-            Module.symvers
+          name: hid-module
+          path: kernel_a50/drivers/usb/gadget/function/*.ko
