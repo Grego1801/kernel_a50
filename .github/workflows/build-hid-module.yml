@@ -1,4 +1,4 @@
-name: Build HIDP Kernel Module
+name: Build HID Module
 on:
   workflow_dispatch:
 
@@ -6,28 +6,31 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-    - name: Checkout kernel
+    - name: Clone kernel
       run: |
-        git clone --depth=1 https://github.com/GiovanYCringe-Experiments/kernel_a50.git
-
-    - name: Install toolchain
+        git clone --depth=1 --branch Lineage-20 https://github.com/GiovanYCringe-Experiments/kernel_a50.git
+        cd kernel_a50
+        
+    - name: Install toolchain (FIXED)
       run: |
         sudo apt update
-        sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu make bc bison flex libssl-dev libelf-dev gcc binutils
-
-    - name: Build HIDP module
+        sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu make bc bison flex libssl-dev libelf-dev
+        # Create missing linker symlink
+        sudo ln -sf /usr/bin/aarch64-linux-gnu-ld /usr/bin/ld
+        
+    - name: Build module
       run: |
         cd kernel_a50
         export ARCH=arm64
         export CROSS_COMPILE=aarch64-linux-gnu-
         make a50_defconfig
-        echo "CONFIG_BT_HIDP=m" >> .config
-        make olddefconfig
+        echo "CONFIG_USB_CONFIGFS_F_HID=m" >> .config
+        make oldconfig
         make modules_prepare
-        make M=net/bluetooth/hidp modules
-
-    - name: Upload module
+        make M=drivers/usb/gadget/function modules
+        
+    - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: hidp-module
-        path: kernel_a50/net/bluetooth/hidp/hidp.ko
+        name: usb_f_hid.ko
+        path: kernel_a50/drivers/usb/gadget/function/usb_f_hid.ko
