@@ -6,9 +6,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Clone kernel source (shallow)
+      - name: Clone kernel source
         run: |
-          git clone --depth=1 --branch master https://github.com/GiovanYCringe-Experiments/kernel_a50.git
+          git clone --depth=1 --branch Lineage-20 https://github.com/GiovanYCringe-Experiments/kernel_a50.git
           cd kernel_a50
           
       - name: Setup compiler
