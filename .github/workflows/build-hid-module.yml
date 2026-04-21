@@ -1,31 +1,34 @@
-name: Build HID Module
+name: Build HIDP Kernel Module
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - name: Clone kernel source
-        run: |
-          git clone --depth=1 --branch Lineage-20 https://github.com/GiovanYCringe-Experiments/kernel_a50.git
-          cd kernel_a50
-          
-      - name: Setup compiler
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-aarch64-linux-gnu make bc bison flex libssl-dev
-          
-      - name: Configure and build HID module
-        run: |
-          cd kernel_a50
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- a50_defconfig
-          echo "CONFIG_USB_CONFIGFS_F_HID=m" >> .config
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_prepare
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=drivers/usb/gadget/function
-          
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: hid-module
-          path: kernel_a50/drivers/usb/gadget/function/*.ko
+    - name: Checkout kernel
+      run: |
+        git clone --depth=1 https://github.com/GiovanYCringe-Experiments/kernel_a50.git
+        cd kernel_a50
+
+    - name: Install toolchain
+      run: |
+        sudo apt update
+        sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu make bc bison flex libssl-dev libelf-dev
+
+    - name: Build HIDP module
+      run: |
+        cd kernel_a50
+        export ARCH=arm64
+        export CROSS_COMPILE=aarch64-linux-gnu-
+        make a50_defconfig
+        echo "CONFIG_BT_HIDP=m" >> .config
+        make olddefconfig
+        make modules_prepare
+        make M=net/bluetooth/hidp modules
+
+    - name: Upload module
+      uses: actions/upload-artifact@v4
+      with:
+        name: hidp-module
+        path: kernel_a50/net/bluetooth/hidp/hidp.ko
