@@ -9,12 +9,11 @@ jobs:
     - name: Checkout kernel
       run: |
         git clone --depth=1 https://github.com/GiovanYCringe-Experiments/kernel_a50.git
-        cd kernel_a50
 
     - name: Install toolchain
       run: |
         sudo apt update
-        sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu make bc bison flex libssl-dev libelf-dev
+        sudo apt install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu make bc bison flex libssl-dev libelf-dev gcc binutils
 
     - name: Build HIDP module
       run: |
